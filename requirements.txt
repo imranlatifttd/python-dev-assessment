@@ -11,3 +11,11 @@ psycopg2-binary==2.9.9
 # Utilities
 python-dotenv==1.0.1
 structlog==24.1.0
+
+# Testing & QA
+pytest==8.2.0
+pytest-mock==3.14.0
+pytest-asyncio==0.23.6
+ruff==0.4.4
+black==24.4.2
+mypy==1.10.0

@@ -27,6 +27,9 @@ def create_app(config_name: str | None = None) -> Flask:
 
     # Register Blueprints
     from app.api.health import health_bp
+    from app.api.profiles import profiles_bp
+
     app.register_blueprint(health_bp)
+    app.register_blueprint(profiles_bp, url_prefix="/api/v1")
 
     return app
