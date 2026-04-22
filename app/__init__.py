@@ -3,6 +3,7 @@ from flask import Flask
 from app.config import config_by_name
 from app.utils.logging import configure_logging
 from app.extensions import init_db
+from app.api.errors import register_error_handlers
 
 
 def create_app(config_name: str | None = None) -> Flask:
@@ -20,6 +21,9 @@ def create_app(config_name: str | None = None) -> Flask:
 
     # Initialize database
     init_db(app)
+
+    # Register global error handlers
+    register_error_handlers(app)
 
     # Register Blueprints
     from app.api.health import health_bp
