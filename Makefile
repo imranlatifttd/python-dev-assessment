@@ -1,0 +1,14 @@
+.PHONY: db-up db-down db-logs db-reset
+
+db-up:
+	docker compose up -d db
+
+db-down:
+	docker compose down
+
+db-logs:
+	docker compose logs -f db
+
+db-reset:
+	docker compose down -v
+	docker compose up -d db
