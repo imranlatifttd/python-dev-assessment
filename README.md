@@ -16,3 +16,36 @@ A RESTful Flask API with a multi-agent backend that discovers, scores and tracks
 4. Generate actionable content recommendations to improve AI visibility.
 
 Full setup instructions, architecture decisions and the opportunity score formula will be documented here
+
+## Local Development Setup
+
+### 1. Environment Variables
+Copy the example environment file:
+```powershell
+Copy-Item .env.example -Destination .env
+```
+*(You will need to add your Anthropic API key to the `.env` file before running the pipeline).*
+
+### 2. Database Setup
+We use Docker to run a local PostgreSQL 16 database. Ensure Docker Desktop is running.
+
+**Start the database locally:**
+```powershell
+docker compose up -d db
+```
+
+**Verify the database container is running and healthy:**
+```powershell
+docker compose ps
+```
+
+The database is accessible locally at `postgresql+psycopg2://postgres:postgres@localhost:5432/ai_visibility`.
+
+**Verify the database connection via Python:**
+Run the following in python shell to ensure your environment can connect to the database:
+```python
+import psycopg2
+conn = psycopg2.connect("dbname=ai_visibility user=postgres password=postgres host=localhost port=5432")
+print("Connected successfully!" if conn else "Connection failed.")
+conn.close()
+```
