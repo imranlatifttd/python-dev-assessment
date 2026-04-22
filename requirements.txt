@@ -1,0 +1,9 @@
+# Core Web & API
+Flask==3.0.3
+pydantic==2.7.1
+Flask-Limiter==3.8.0
+
+# Database & ORM
+SQLAlchemy==2.0.30
+alembic==1.13.1
+psycopg2-binary==2.9.9
