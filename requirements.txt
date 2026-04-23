@@ -8,7 +8,8 @@ SQLAlchemy==2.0.30
 alembic==1.13.1
 psycopg2-binary==2.9.9
 
-# Utilities
+# AI & Utilities
+anthropic==0.26.0
 python-dotenv==1.0.1
 structlog==24.1.0
 
