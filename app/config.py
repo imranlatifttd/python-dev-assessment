@@ -19,6 +19,10 @@ class Config:
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+    USE_REAL_SEO_DATA = os.getenv("USE_REAL_SEO_DATA", "false").lower() == "true"
+    DATAFORSEO_LOGIN = os.getenv("DATAFORSEO_LOGIN")
+    DATAFORSEO_PASSWORD = os.getenv("DATAFORSEO_PASSWORD")
+
 
 class DevelopmentConfig(Config):
     DEBUG = True
