@@ -10,11 +10,13 @@ from app.schemas.pipeline import PipelineRunResponse
 from app.schemas.query import DiscoveredQueryResponse
 from app.schemas.recommendation import ContentRecommendationResponse
 import app.tasks
+from app.limiter import limiter
 
 pipeline_bp = Blueprint("pipeline", __name__)
 
 
 @pipeline_bp.route("/profiles/<uuid:profile_uuid>/analyze", methods=["POST"])
+@limiter.limit("2 per minute")
 def trigger_analysis(profile_uuid):
     """Triggers the multi-agent AI visibility pipeline for a profile"""
     profile = db_session.get(BusinessProfile, profile_uuid)

@@ -5,6 +5,14 @@ import structlog
 logger = structlog.get_logger(__name__)
 
 def register_error_handlers(app):
+    @app.errorhandler(429)
+    def ratelimit_handler(e):
+        logger.warning("Rate limit exceeded", description=e.description)
+        return jsonify({
+            "error": "Too Many Requests",
+            "details": [{"msg": f"Rate limit exceeded: {e.description}", "type": "rate_limit_exceeded"}]
+        }), 429
+
     @app.errorhandler(HTTPException)
     def handle_http_exception(e):
         return jsonify({

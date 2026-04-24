@@ -5,6 +5,7 @@ from app.utils.logging import configure_logging
 from app.extensions import init_db
 from app.api.errors import register_error_handlers
 from app.celery_app import init_celery
+from app.limiter import limiter
 
 def create_app(config_name: str | None = None) -> Flask:
     """Application factory pattern"""
@@ -18,6 +19,10 @@ def create_app(config_name: str | None = None) -> Flask:
         config_name = os.getenv("FLASK_ENV", "development")
 
     app.config.from_object(config_by_name[config_name])
+
+    # initialize limiter with redis storage
+    app.config["RATELIMIT_STORAGE_URI"] = app.config.get("REDIS_URL", "memory://")
+    limiter.init_app(app)
 
     # initialize Celery
     init_celery(app)
