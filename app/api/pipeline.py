@@ -12,6 +12,7 @@ from app.schemas.recommendation import ContentRecommendationResponse
 import app.tasks
 from app.limiter import limiter
 
+logger = structlog.get_logger(__name__)
 pipeline_bp = Blueprint("pipeline", __name__)
 
 
@@ -25,6 +26,8 @@ def trigger_analysis(profile_uuid):
         return jsonify(
             {"error": "Not Found", "details": [{"msg": "Profile not found", "type": "resource_missing"}]}), 404
 
+    logger.info("Pipeline trigger request received", profile_uuid=str(profile_uuid))
+
     try:
         # initialize the run in the DB to get a UUID instantly
         run_uuid = initialize_pipeline_run(profile.uuid)
@@ -35,7 +38,7 @@ def trigger_analysis(profile_uuid):
 
         # check feature flag to determine sync vs async execution
         if current_app.config.get("ASYNC_PIPELINE"):
-            app.tasks.execute_pipeline_task.delay(str(run_uuid))
+            app.tasks.execute_pipeline_task.delay(str(run_uuid), corr_id)
         else:
             run_visibility_pipeline(run_uuid)
 
