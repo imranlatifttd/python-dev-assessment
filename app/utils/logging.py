@@ -1,5 +1,7 @@
 import logging
+
 import structlog
+
 
 def configure_logging() -> None:
     """Configure structlog for structured JSON logging"""

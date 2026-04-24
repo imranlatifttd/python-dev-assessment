@@ -1,11 +1,12 @@
 import math
 
+
 def calculate_opportunity_score(
-        volume: int,
-        difficulty: int,
-        domain_visible: bool,
-        visibility_position: int | None,
-        intent_type: str
+    volume: int,
+    difficulty: int,
+    domain_visible: bool,
+    visibility_position: int | None,
+    intent_type: str,
 ) -> float:
     """
     Calculates the opportunity score (0 to 1) using the multi factor weighted formula.
@@ -33,11 +34,16 @@ def calculate_opportunity_score(
         "comparison": 1,
         "evaluation": 0.7,
         "informational": 0.4,
-        "navigational": 0.1
+        "navigational": 0.1,
     }
     intent_score = intent_map.get(intent_type.lower(), 0.4)
 
     # Apply weighted formula
-    score = (0.30 * norm_vol) + (0.25 * (1 - norm_diff)) + (0.30 * vis_gap) + (0.15 * intent_score)
+    score = (
+        (0.30 * norm_vol)
+        + (0.25 * (1 - norm_diff))
+        + (0.30 * vis_gap)
+        + (0.15 * intent_score)
+    )
 
     return round(max(0.0, min(score, 1)), 4)

@@ -14,7 +14,7 @@ def test_trigger_analysis_success(client, db, mocker, app):
         "domain": "testapi.com",
         "industry": "Tech",
         "description": "API Testing",
-        "competitors": []
+        "competitors": [],
     }
     create_resp = client.post("/api/v1/profiles", json=payload)
     profile_uuid = create_resp.get_json()["profile_uuid"]
@@ -22,13 +22,16 @@ def test_trigger_analysis_success(client, db, mocker, app):
     mock_run_uuid = uuid.uuid4()
 
     from app.models.pipeline_run import PipelineRun
-    dummy_run = PipelineRun(uuid=mock_run_uuid, profile_uuid=uuid.UUID(profile_uuid), status="completed")
+
+    dummy_run = PipelineRun(
+        uuid=mock_run_uuid, profile_uuid=uuid.UUID(profile_uuid), status="completed"
+    )
     db.add(dummy_run)
     db.commit()
 
     # mock BOTH initialization and execution so the endpoint fetches our dummy run
-    mocker.patch('app.api.pipeline.initialize_pipeline_run', return_value=mock_run_uuid)
-    mocker.patch('app.api.pipeline.run_visibility_pipeline', return_value=mock_run_uuid)
+    mocker.patch("app.api.pipeline.initialize_pipeline_run", return_value=mock_run_uuid)
+    mocker.patch("app.api.pipeline.run_visibility_pipeline", return_value=mock_run_uuid)
 
     app.config["ASYNC_PIPELINE"] = False
 
@@ -46,7 +49,9 @@ def test_get_run_status(client, db):
     from app.models.pipeline_run import PipelineRun
     from app.models.profile import BusinessProfile
 
-    profile = BusinessProfile(name="Status Test", domain="status.com", industry="Tech", description="Test")
+    profile = BusinessProfile(
+        name="Status Test", domain="status.com", industry="Tech", description="Test"
+    )
     db.add(profile)
     db.commit()
 
@@ -61,7 +66,10 @@ def test_get_run_status(client, db):
 
 def test_get_queries_and_recs_empty(client, db):
     from app.models.profile import BusinessProfile
-    profile = BusinessProfile(name="Empty Test", domain="empty.com", industry="Tech", description="Test")
+
+    profile = BusinessProfile(
+        name="Empty Test", domain="empty.com", industry="Tech", description="Test"
+    )
     db.add(profile)
     db.commit()
 
@@ -77,19 +85,30 @@ def test_get_queries_and_recs_empty(client, db):
 def test_trigger_analysis_rate_limit(client, db, mocker, app):
     # setup mock profile
     from app.models.profile import BusinessProfile
-    profile = BusinessProfile(name="Rate Limit Corp", domain="ratelimit.com", industry="Tech",
-                              description="Testing 429")
+
+    profile = BusinessProfile(
+        name="Rate Limit Corp",
+        domain="ratelimit.com",
+        industry="Tech",
+        description="Testing 429",
+    )
     db.add(profile)
     db.commit()
 
-    mocker.patch('app.tasks.execute_pipeline_task.delay', return_value=True)
+    mocker.patch("app.tasks.execute_pipeline_task.delay", return_value=True)
 
     app.config["ASYNC_PIPELINE"] = True
 
-    mock_ip = {'REMOTE_ADDR': '127.0.0.2'}
-    resp1 = client.post(f"/api/v1/profiles/{profile.uuid}/analyze", environ_base=mock_ip)
-    resp2 = client.post(f"/api/v1/profiles/{profile.uuid}/analyze", environ_base=mock_ip)
-    resp3 = client.post(f"/api/v1/profiles/{profile.uuid}/analyze", environ_base=mock_ip)
+    mock_ip = {"REMOTE_ADDR": "127.0.0.2"}
+    resp1 = client.post(
+        f"/api/v1/profiles/{profile.uuid}/analyze", environ_base=mock_ip
+    )
+    resp2 = client.post(
+        f"/api/v1/profiles/{profile.uuid}/analyze", environ_base=mock_ip
+    )
+    resp3 = client.post(
+        f"/api/v1/profiles/{profile.uuid}/analyze", environ_base=mock_ip
+    )
 
     # assertions
     assert resp1.status_code == 202

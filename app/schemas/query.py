@@ -1,6 +1,8 @@
-from pydantic import BaseModel, ConfigDict, Field
-from datetime import datetime
 import uuid
+from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict, Field
+
 
 class DiscoveredQueryResponse(BaseModel):
     query_uuid: uuid.UUID = Field(validation_alias="uuid")

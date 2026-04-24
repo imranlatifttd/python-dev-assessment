@@ -8,7 +8,7 @@ def generate_mock_metrics(query_text: str) -> tuple[int, int]:
     yields the exact same mocked metrics.
     """
     # Create a stable integer from the query string
-    hash_obj = hashlib.md5(query_text.encode('utf-8'))
+    hash_obj = hashlib.md5(query_text.encode("utf-8"))
     hash_int = int(hash_obj.hexdigest(), 16)
 
     # Volume between 10 and 10000

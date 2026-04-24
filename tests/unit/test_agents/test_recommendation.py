@@ -1,4 +1,3 @@
-import pytest
 from app.agents.recommendation import ContentRecommendationAgent
 
 
@@ -6,17 +5,17 @@ def test_content_recommendation_agent_success(mocker, app):
     profile_data = {
         "name": "Surfer SEO",
         "industry": "SEO Software",
-        "competitors": ["clearscope.io"]
+        "competitors": ["clearscope.io"],
     }
     query_data = {
         "query_text": "Surfer SEO vs Clearscope",
         "intent_category": "comparison",
         "domain_visible": False,
-        "visibility_position": None
+        "visibility_position": None,
     }
 
     # Mock LLM response
-    mock_json = '''
+    mock_json = """
     {
       "recommendations": [
         {
@@ -28,7 +27,7 @@ def test_content_recommendation_agent_success(mocker, app):
         }
       ]
     }
-    '''
+    """
 
     mock_response = mocker.Mock()
     mock_response.usage.input_tokens = 60
@@ -37,7 +36,7 @@ def test_content_recommendation_agent_success(mocker, app):
 
     mock_client = mocker.Mock()
     mock_client.messages.create.return_value = mock_response
-    mocker.patch('app.agents.base.get_anthropic_client', return_value=mock_client)
+    mocker.patch("app.agents.base.get_anthropic_client", return_value=mock_client)
 
     with app.app_context():
         agent = ContentRecommendationAgent()

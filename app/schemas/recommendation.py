@@ -1,5 +1,7 @@
-from pydantic import BaseModel, ConfigDict, Field
 import uuid
+
+from pydantic import BaseModel, ConfigDict, Field
+
 
 class ContentRecommendationResponse(BaseModel):
     recommendation_uuid: uuid.UUID = Field(validation_alias="uuid")

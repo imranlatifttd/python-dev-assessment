@@ -1,4 +1,3 @@
-import pytest
 from app.services.seo_provider import MockSEOProvider, RealSEOProvider
 from app.utils.scoring import calculate_opportunity_score
 
@@ -19,7 +18,12 @@ def test_real_provider_success(mocker, app):
     # Mock the HTTP response from DataForSEO so we don't make a real network call
     mock_response = mocker.Mock()
     mock_response.json.return_value = {
-        "tasks": [{"result": [{"search_volume": 1500, "keyword_difficulty": 45.6}]}]
+        "tasks": [
+            {
+                "status_code": 20000,
+                "result": [{"search_volume": 1500, "competition_index": 45}],
+            }
+        ]
     }
     mocker.patch("requests.post", return_value=mock_response)
 

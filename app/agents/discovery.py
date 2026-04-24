@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field
+
 from app.agents.base import BaseAgent
 from app.agents.prompts.discovery import SYSTEM_PROMPT, USER_PROMPT
 
@@ -23,14 +24,14 @@ class QueryDiscoveryAgent(BaseAgent):
             domain=profile_data.get("domain", "Unknown"),
             industry=profile_data.get("industry", "Unknown"),
             description=profile_data.get("description", "Unknown"),
-            competitors=", ".join(profile_data.get("competitors", []))
+            competitors=", ".join(profile_data.get("competitors", [])),
         )
 
         # BaseAgent handles the LLM call, JSON parsing, retries and pydantic validation
         result = self._call_llm_and_parse(
             system_prompt=SYSTEM_PROMPT,
             user_prompt=user_prompt,
-            schema=DiscoveredQueriesSchema
+            schema=DiscoveredQueriesSchema,
         )
 
         return result.queries

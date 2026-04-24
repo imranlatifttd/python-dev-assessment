@@ -1,8 +1,9 @@
 from pydantic import BaseModel, Field
+
 from app.agents.base import BaseAgent
 from app.agents.prompts.scoring import SYSTEM_PROMPT, USER_PROMPT
-from app.utils.scoring import calculate_opportunity_score
 from app.services.seo_provider import get_seo_provider
+from app.utils.scoring import calculate_opportunity_score
 
 
 class VisibilityAnalysisSchema(BaseModel):
@@ -21,7 +22,7 @@ class VisibilityScoringAgent(BaseAgent):
         llm_result = self._call_llm_and_parse(
             system_prompt=SYSTEM_PROMPT,
             user_prompt=user_prompt,
-            schema=VisibilityAnalysisSchema
+            schema=VisibilityAnalysisSchema,
         )
 
         # get metrics via strategy pattern factory
@@ -34,7 +35,7 @@ class VisibilityScoringAgent(BaseAgent):
             difficulty=difficulty,
             domain_visible=llm_result.domain_visible,
             visibility_position=llm_result.visibility_position,
-            intent_type=llm_result.intent_category
+            intent_type=llm_result.intent_category,
         )
 
         return {
@@ -44,5 +45,5 @@ class VisibilityScoringAgent(BaseAgent):
             "domain_visible": llm_result.domain_visible,
             "visibility_position": llm_result.visibility_position,
             "intent_category": llm_result.intent_category,
-            "opportunity_score": opp_score
+            "opportunity_score": opp_score,
         }

@@ -1,11 +1,14 @@
 import uuid
+
 import structlog
+
 from app.celery_app import celery
 from app.services.pipeline import run_visibility_pipeline
 
 logger = structlog.get_logger(__name__)
 
 flask_app = None
+
 
 @celery.task(name="execute_pipeline_task")
 def execute_pipeline_task(run_uuid_str: str, correlation_id: str = None):
@@ -18,9 +21,9 @@ def execute_pipeline_task(run_uuid_str: str, correlation_id: str = None):
         structlog.contextvars.bind_contextvars(correlation_id=correlation_id)
     structlog.contextvars.bind_contextvars(run_uuid=run_uuid_str)
 
-
     if flask_app is None:
         from app import create_app
+
         flask_app = create_app()
 
     with flask_app.app_context():

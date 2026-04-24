@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field
+
 from app.agents.base import BaseAgent
 from app.agents.prompts.recommendation import SYSTEM_PROMPT, USER_PROMPT
 
@@ -40,13 +41,13 @@ class ContentRecommendationAgent(BaseAgent):
             competitors=", ".join(profile_data.get("competitors", [])),
             query=query_data.get("query_text", "Unknown"),
             intent=query_data.get("intent_category", "Unknown"),
-            gap_status=gap_status
+            gap_status=gap_status,
         )
 
         result = self._call_llm_and_parse(
             system_prompt=SYSTEM_PROMPT,
             user_prompt=user_prompt,
-            schema=ContentRecommendationSchema
+            schema=ContentRecommendationSchema,
         )
 
         # Convert the pydantic models back to standard dicts for the database layer

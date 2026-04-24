@@ -1,14 +1,17 @@
 import os
-from flask import Flask, request
 import uuid
+
 import structlog
-from app.config import config_by_name
-from app.utils.logging import configure_logging
-from app.extensions import init_db
+from flask import Flask, request
+
 from app.api.errors import register_error_handlers
 from app.celery_app import init_celery
+from app.config import config_by_name
+from app.extensions import init_db
 from app.limiter import limiter
 from app.logging_setup import configure_logging
+from app.utils.logging import configure_logging
+
 
 def create_app(config_name: str | None = None) -> Flask:
     """Application factory pattern"""
@@ -48,8 +51,8 @@ def create_app(config_name: str | None = None) -> Flask:
 
     # Register Blueprints
     from app.api.health import health_bp
-    from app.api.profiles import profiles_bp
     from app.api.pipeline import pipeline_bp
+    from app.api.profiles import profiles_bp
 
     app.register_blueprint(health_bp)
     app.register_blueprint(profiles_bp, url_prefix="/api/v1")

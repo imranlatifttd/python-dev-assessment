@@ -1,6 +1,6 @@
 import anthropic
-from flask import current_app
 import structlog
+from flask import current_app
 
 logger = structlog.get_logger(__name__)
 
@@ -14,7 +14,4 @@ def get_anthropic_client() -> anthropic.Anthropic:
         # but the actual API call will fail if not mocked.
         api_key = "dummy-key-for-testing"
 
-    return anthropic.Anthropic(
-        api_key=api_key,
-        max_retries=3
-    )
+    return anthropic.Anthropic(api_key=api_key, max_retries=3)

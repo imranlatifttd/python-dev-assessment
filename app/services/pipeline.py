@@ -1,27 +1,31 @@
-from datetime import datetime, timezone
 import uuid
+from datetime import datetime, timezone
+
 import structlog
+
 from app import extensions
-from app.models.profile import BusinessProfile
+from app.agents.discovery import QueryDiscoveryAgent
+from app.agents.recommendation import ContentRecommendationAgent
+from app.agents.scoring import VisibilityScoringAgent
 from app.models.pipeline_run import PipelineRun
+from app.models.profile import BusinessProfile
 from app.models.query import DiscoveredQuery
 from app.models.recommendation import ContentRecommendation
-from app.agents.discovery import QueryDiscoveryAgent
-from app.agents.scoring import VisibilityScoringAgent
-from app.agents.recommendation import ContentRecommendationAgent
 
 logger = structlog.get_logger(__name__)
+
 
 def initialize_pipeline_run(profile_uuid: uuid.UUID) -> uuid.UUID:
     """Creates a pending run in the DB to immediately return to the user"""
     run = PipelineRun(
         profile_uuid=profile_uuid,
         status="pending",
-        started_at=datetime.now(timezone.utc)
+        started_at=datetime.now(timezone.utc),
     )
     extensions.db_session.add(run)
     extensions.db_session.commit()
     return run.uuid
+
 
 def run_visibility_pipeline(run_uuid: uuid.UUID) -> uuid.UUID:
     """Executes the multi-agent AI pipeline for a given run"""
@@ -32,7 +36,7 @@ def run_visibility_pipeline(run_uuid: uuid.UUID) -> uuid.UUID:
     profile = extensions.db_session.get(BusinessProfile, run.profile_uuid)
 
     profile_uuid = profile.uuid
-    
+
     # update status to running
     run.status = "running"
     extensions.db_session.commit()
@@ -45,7 +49,7 @@ def run_visibility_pipeline(run_uuid: uuid.UUID) -> uuid.UUID:
             "domain": profile.domain,
             "industry": profile.industry,
             "description": profile.description,
-            "competitors": profile.competitors
+            "competitors": profile.competitors,
         }
 
         # query Discovery
@@ -73,7 +77,7 @@ def run_visibility_pipeline(run_uuid: uuid.UUID) -> uuid.UUID:
                 opportunity_score=score_data["opportunity_score"],
                 domain_visible=score_data["domain_visible"],
                 visibility_position=score_data["visibility_position"],
-                discovered_at=datetime.now(timezone.utc)
+                discovered_at=datetime.now(timezone.utc),
             )
             extensions.db_session.add(db_query)
             extensions.db_session.flush()
@@ -84,7 +88,9 @@ def run_visibility_pipeline(run_uuid: uuid.UUID) -> uuid.UUID:
         extensions.db_session.commit()
 
         # content recommendations (only for top 3 highest opportunity queries to save tokens)
-        scored_queries_data.sort(key=lambda x: x["data"]["opportunity_score"], reverse=True)
+        scored_queries_data.sort(
+            key=lambda x: x["data"]["opportunity_score"], reverse=True
+        )
         top_queries = scored_queries_data[:3]
 
         rec_agent = ContentRecommendationAgent()
@@ -103,7 +109,7 @@ def run_visibility_pipeline(run_uuid: uuid.UUID) -> uuid.UUID:
                     title=rec_data["title"],
                     rationale=rec_data["rationale"],
                     target_keywords=rec_data["target_keywords"],
-                    priority=rec_data["priority"]
+                    priority=rec_data["priority"],
                 )
                 extensions.db_session.add(db_rec)
 
@@ -113,11 +119,17 @@ def run_visibility_pipeline(run_uuid: uuid.UUID) -> uuid.UUID:
         run.completed_at = datetime.now(timezone.utc)
         extensions.db_session.commit()
 
-        logger.info("Pipeline completed successfully", run_uuid=str(run.uuid), tokens=total_tokens)
+        logger.info(
+            "Pipeline completed successfully",
+            run_uuid=str(run.uuid),
+            tokens=total_tokens,
+        )
         return run.uuid
 
     except Exception as e:
-        logger.exception("Pipeline failed", error=str(e), profile_uuid=str(profile_uuid))
+        logger.exception(
+            "Pipeline failed", error=str(e), profile_uuid=str(profile_uuid)
+        )
         extensions.db_session.rollback()
 
         # re-fetch the run from the DB to cleanly update the status after the rollback

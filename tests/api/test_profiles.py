@@ -4,7 +4,7 @@ def test_create_profile_success(client):
         "domain": "surferseo.com",
         "industry": "SEO Software",
         "description": "AI-powered SEO tool",
-        "competitors": ["clearscope.io", "marketmuse.com"]
+        "competitors": ["clearscope.io", "marketmuse.com"],
     }
 
     response = client.post("/api/v1/profiles", json=payload)
@@ -21,7 +21,7 @@ def test_create_profile_validation_error(client):
     payload = {
         "name": "Surfer SEO",
         "industry": "SEO Software",
-        "description": "AI-powered SEO tool"
+        "description": "AI-powered SEO tool",
     }
 
     response = client.post("/api/v1/profiles", json=payload)
@@ -38,7 +38,7 @@ def test_get_profile_success(client):
         "name": "Frase",
         "domain": "frase.io",
         "industry": "SEO Tools",
-        "description": "Content brief tool"
+        "description": "Content brief tool",
     }
     create_resp = client.post("/api/v1/profiles", json=payload)
     profile_uuid = create_resp.get_json()["profile_uuid"]
@@ -55,6 +55,7 @@ def test_get_profile_success(client):
 
 def test_get_profile_not_found(client):
     import uuid
+
     random_uuid = str(uuid.uuid4())
 
     response = client.get(f"/api/v1/profiles/{random_uuid}")

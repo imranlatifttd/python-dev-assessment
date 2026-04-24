@@ -1,9 +1,11 @@
 import json
-import time
 import re
+import time
 from typing import Any
-from pydantic import BaseModel, ValidationError
+
 import structlog
+from pydantic import BaseModel, ValidationError
+
 from app.services.llm_client import get_anthropic_client
 
 logger = structlog.get_logger(__name__)
@@ -11,6 +13,7 @@ logger = structlog.get_logger(__name__)
 
 class AgentError(Exception):
     """Custom exception for agent execution failures"""
+
     pass
 
 
@@ -27,27 +30,29 @@ class BaseAgent:
     def _extract_json_from_text(self, text: str) -> dict | list:
         """Extracts JSON from text, handling markdown blocks"""
         # Try to find JSON within markdown blocks first
-        json_match = re.search(r'```json\s*(.*?)\s*```', text, re.DOTALL)
+        json_match = re.search(r"```json\s*(.*?)\s*```", text, re.DOTALL)
         if json_match:
             json_str = json_match.group(1)
         else:
             # Fallback: find the first { or [ and the last } or ]
-            start_idx = text.find('{')
-            list_start_idx = text.find('[')
+            start_idx = text.find("{")
+            list_start_idx = text.find("[")
 
             if start_idx == -1 and list_start_idx == -1:
                 raise ValueError("No JSON object or array found in response.")
 
             if start_idx != -1 and (list_start_idx == -1 or start_idx < list_start_idx):
-                end_idx = text.rfind('}') + 1
+                end_idx = text.rfind("}") + 1
                 json_str = text[start_idx:end_idx]
             else:
-                end_idx = text.rfind(']') + 1
+                end_idx = text.rfind("]") + 1
                 json_str = text[list_start_idx:end_idx]
 
         return json.loads(json_str)
 
-    def _call_llm_and_parse(self, system_prompt: str, user_prompt: str, schema: type[BaseModel]) -> BaseModel:
+    def _call_llm_and_parse(
+        self, system_prompt: str, user_prompt: str, schema: type[BaseModel]
+    ) -> BaseModel:
         """
         Calls the LLM, extracts JSON, validates against a Pydantic schema
         and handles parsing retries
@@ -66,16 +71,14 @@ class BaseAgent:
                     max_tokens=4096,
                     temperature=0.2,
                     system=system_prompt,
-                    messages=[
-                        {"role": "user", "content": user_prompt}
-                    ]
+                    messages=[{"role": "user", "content": user_prompt}],
                 )
                 # stop the timer
                 duration = time.perf_counter() - start_time
                 # Track tokens
                 input_tokens = response.usage.input_tokens
                 output_tokens = response.usage.output_tokens
-                self.tokens_used += (input_tokens + output_tokens)
+                self.tokens_used += input_tokens + output_tokens
 
                 logger.info(
                     "LLM Call Completed",
@@ -83,7 +86,7 @@ class BaseAgent:
                     duration_seconds=round(duration, 3),
                     input_tokens=input_tokens,
                     output_tokens=output_tokens,
-                    total_tokens=self.tokens_used
+                    total_tokens=self.tokens_used,
                 )
 
                 raw_text = response.content[0].text
@@ -94,14 +97,20 @@ class BaseAgent:
                 return validated_data
 
             except (json.JSONDecodeError, ValueError) as e:
-                logger.warning("Failed to parse JSON from LLM", error=str(e), attempt=attempt + 1)
+                logger.warning(
+                    "Failed to parse JSON from LLM", error=str(e), attempt=attempt + 1
+                )
                 if attempt == max_parse_attempts - 1:
-                    raise AgentError(f"Failed to extract valid JSON after {max_parse_attempts} attempts: {str(e)}")
+                    raise AgentError(
+                        f"Failed to extract valid JSON after {max_parse_attempts} attempts: {str(e)}"
+                    )
                 # If we fail, we could append an error message to the prompt and try again
                 # but simple retries often work for transient claude generation
 
             except ValidationError as e:
-                logger.warning("LLM output did not match schema", error=str(e), attempt=attempt + 1)
+                logger.warning(
+                    "LLM output did not match schema", error=str(e), attempt=attempt + 1
+                )
                 if attempt == max_parse_attempts - 1:
                     raise AgentError(f"LLM output failed schema validation: {str(e)}")
 

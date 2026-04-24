@@ -2,6 +2,7 @@ from celery import Celery
 
 celery = Celery("app", include=["app.tasks"])
 
+
 def init_celery(app):
     """Configures celery to run within the flask app context"""
     celery.conf.update(
