@@ -4,6 +4,8 @@ from requests.auth import HTTPBasicAuth
 from abc import ABC, abstractmethod
 from flask import current_app
 import structlog
+import re
+import time
 
 logger = structlog.get_logger(__name__)
 
@@ -32,7 +34,7 @@ class MockSEOProvider(BaseSEOProvider):
 
 
 class RealSEOProvider(BaseSEOProvider):
-    """Fetches real metrics from the DataForSEO API."""
+    """Fetches real metrics from the DataForSEO API"""
 
     def get_metrics(self, query_text: str, domain: str) -> tuple[int, int]:
         login = current_app.config.get("DATAFORSEO_LOGIN")
@@ -42,46 +44,56 @@ class RealSEOProvider(BaseSEOProvider):
             logger.error("DataForSEO credentials missing. Falling back to 0 metrics.")
             return 0, 0
 
-        logger.info("Fetching REAL SEO data from DataForSEO", query=query_text)
+        # sanitize for Google Ads, remove punctuation and cap at 10 words
+        clean_query = re.sub(r'[^\w\s-]', '', query_text).strip()
+        clean_query = " ".join(clean_query.split()[:10])[:80]
 
-        url = "https://api.dataforseo.com/v3/dataforseo_labs/google/keyword_metrics/live"
+        logger.info("Fetching REAL SEO data from DataForSEO", original=query_text, sanitized=clean_query)
+
+        url = "https://api.dataforseo.com/v3/keywords_data/google_ads/search_volume/live"
         payload = [{
-            "keywords": [query_text],
+            "keywords": [clean_query],
             "location_name": "United States",
-            "language_name": "English"
+            "language_code": "en"
         }]
+
+        # throttle to stay under the 12 requests/minute free-tier limit
+        time.sleep(5.1)
 
         try:
             response = requests.post(
                 url,
                 json=payload,
                 auth=HTTPBasicAuth(login, password),
-                timeout=10
+                timeout=15
             )
             response.raise_for_status()
             data = response.json()
 
-            # Safely navigate the DataForSEO nested JSON response
-            try:
-                item = data["tasks"][0]["result"][0]
-                if item is None:
-                    # Query has no search volume data
-                    return 0, 0
+            # defensive parsing to prevent NoneType errors
+            task = data.get("tasks", [{}])[0]
 
-                volume = item.get("search_volume", 0)
-                # DataForSEO returns difficulty as 0-100 float, we want an int
-                difficulty = int(item.get("keyword_difficulty", 0))
-
-                logger.info("DataForSEO Success", volume=volume, difficulty=difficulty)
-                return volume, difficulty
-
-            except (IndexError, KeyError, TypeError) as e:
-                logger.warning("DataForSEO response unexpected structure", error=str(e), data=data)
+            # if DataForSEO throws a specific error like rate limit or word count
+            if task.get("status_code") != 20000:
+                logger.warning("DataForSEO API rejected query",
+                               status=task.get("status_code"),
+                               msg=task.get("status_message"))
                 return 0, 0
 
-        except requests.exceptions.RequestException as e:
+            result = task.get("result")
+            if not result or result[0] is None:
+                return 0, 0
+
+            item = result[0]
+
+            volume = int(item.get("search_volume") or 0)
+            difficulty = int(item.get("competition_index") or 0)
+
+            logger.info("DataForSEO Success", volume=volume, difficulty=difficulty)
+            return volume, difficulty
+
+        except Exception as e:
             logger.error("DataForSEO API call failed", error=str(e))
-            # In a production app we might retry, but returning 0 is safe for the pipeline
             return 0, 0
 
 

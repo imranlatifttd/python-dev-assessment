@@ -16,8 +16,8 @@ class AgentError(Exception):
 class BaseAgent:
     """Abstract base class for all AI agents"""
 
-    # Using Claude 3.5 Sonnet
-    MODEL = "claude-3-5-sonnet-20241022"
+    # Using Claude
+    MODEL = "claude-sonnet-4-6"
 
     def __init__(self):
         self.client = get_anthropic_client()
