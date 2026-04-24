@@ -12,25 +12,30 @@ from app.agents.recommendation import ContentRecommendationAgent
 
 logger = structlog.get_logger(__name__)
 
-
-def run_visibility_pipeline(profile_uuid: uuid.UUID) -> uuid.UUID:
-    """
-    Orchestrates the multi-agent AI pipeline for a given business profile
-    Returns the UUID of the PipelineRun
-    """
-    profile = extensions.db_session.get(BusinessProfile, profile_uuid)
-    if not profile:
-        raise ValueError(f"Profile with UUID {profile_uuid} not found.")
-
-    # initialize the run in the database
+def initialize_pipeline_run(profile_uuid: uuid.UUID) -> uuid.UUID:
+    """Creates a pending run in the DB to immediately return to the user"""
     run = PipelineRun(
         profile_uuid=profile_uuid,
-        status="running",
+        status="pending",
         started_at=datetime.now(timezone.utc)
     )
     extensions.db_session.add(run)
     extensions.db_session.commit()
-    extensions.db_session.refresh(run)
+    return run.uuid
+
+def run_visibility_pipeline(run_uuid: uuid.UUID) -> uuid.UUID:
+    """Executes the multi-agent AI pipeline for a given run"""
+    run = extensions.db_session.get(PipelineRun, run_uuid)
+    if not run:
+        raise ValueError(f"Run with UUID {run_uuid} not found.")
+
+    profile = extensions.db_session.get(BusinessProfile, run.profile_uuid)
+
+    profile_uuid = profile.uuid
+    
+    # update status to running
+    run.status = "running"
+    extensions.db_session.commit()
 
     total_tokens = 0
 

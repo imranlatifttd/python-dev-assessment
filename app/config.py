@@ -23,6 +23,11 @@ class Config:
     DATAFORSEO_LOGIN = os.getenv("DATAFORSEO_LOGIN")
     DATAFORSEO_PASSWORD = os.getenv("DATAFORSEO_PASSWORD")
 
+    # Feature Flags & Async
+    ASYNC_PIPELINE = os.getenv("ASYNC_PIPELINE", "false").lower() == "true"
+    CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
+    CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/0")
+
 
 class DevelopmentConfig(Config):
     DEBUG = True

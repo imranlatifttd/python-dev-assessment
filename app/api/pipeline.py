@@ -5,10 +5,11 @@ from app.models.profile import BusinessProfile
 from app.models.pipeline_run import PipelineRun
 from app.models.query import DiscoveredQuery
 from app.models.recommendation import ContentRecommendation
-from app.services.pipeline import run_visibility_pipeline
+from app.services.pipeline import run_visibility_pipeline, initialize_pipeline_run
 from app.schemas.pipeline import PipelineRunResponse
 from app.schemas.query import DiscoveredQueryResponse
 from app.schemas.recommendation import ContentRecommendationResponse
+import app.tasks
 
 pipeline_bp = Blueprint("pipeline", __name__)
 
@@ -23,10 +24,19 @@ def trigger_analysis(profile_uuid):
             {"error": "Not Found", "details": [{"msg": "Profile not found", "type": "resource_missing"}]}), 404
 
     try:
-        run_uuid = run_visibility_pipeline(profile.uuid)
-        run = db_session.get(PipelineRun, run_uuid)
+        # initialize the run in the DB to get a UUID instantly
+        run_uuid = initialize_pipeline_run(profile.uuid)
 
+        # check feature flag to determine sync vs async execution
+        if current_app.config.get("ASYNC_PIPELINE"):
+            app.tasks.execute_pipeline_task.delay(str(run_uuid))
+        else:
+            run_visibility_pipeline(run_uuid)
+
+        # fetch and return the run state (will be 'pending' if async, 'completed' if sync)
+        run = db_session.get(PipelineRun, run_uuid)
         response_data = PipelineRunResponse.model_validate(run)
+
         return jsonify(response_data.model_dump(mode="json")), 202
 
     except Exception as e:
