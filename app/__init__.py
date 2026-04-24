@@ -1,11 +1,14 @@
 import os
-from flask import Flask
+from flask import Flask, request
+import uuid
+import structlog
 from app.config import config_by_name
 from app.utils.logging import configure_logging
 from app.extensions import init_db
 from app.api.errors import register_error_handlers
 from app.celery_app import init_celery
 from app.limiter import limiter
+from app.logging_setup import configure_logging
 
 def create_app(config_name: str | None = None) -> Flask:
     """Application factory pattern"""
@@ -29,6 +32,16 @@ def create_app(config_name: str | None = None) -> Flask:
 
     # Initialize database
     init_db(app)
+
+    # inject correlation ID before every request
+    @app.before_request
+    def bind_correlation_id():
+        # clear context from previous thread to prevent leakage
+        structlog.contextvars.clear_contextvars()
+
+        # check if an upstream proxy sent an ID, otherwise, generate one
+        corr_id = request.headers.get("X-Correlation-ID", str(uuid.uuid4()))
+        structlog.contextvars.bind_contextvars(correlation_id=corr_id)
 
     # Register global error handlers
     register_error_handlers(app)

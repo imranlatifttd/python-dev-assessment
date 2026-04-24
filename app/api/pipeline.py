@@ -1,4 +1,4 @@
-import threading
+import structlog
 from flask import Blueprint, jsonify, current_app
 from app.extensions import db_session
 from app.models.profile import BusinessProfile
@@ -28,6 +28,10 @@ def trigger_analysis(profile_uuid):
     try:
         # initialize the run in the DB to get a UUID instantly
         run_uuid = initialize_pipeline_run(profile.uuid)
+
+        # grab the correlation ID from the current flask context
+        ctx = structlog.contextvars.get_contextvars()
+        corr_id = ctx.get("correlation_id", "unknown")
 
         # check feature flag to determine sync vs async execution
         if current_app.config.get("ASYNC_PIPELINE"):

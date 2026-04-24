@@ -1,4 +1,5 @@
 import json
+import time
 import re
 from typing import Any
 from pydantic import BaseModel, ValidationError
@@ -55,6 +56,9 @@ class BaseAgent:
 
         for attempt in range(max_parse_attempts):
             try:
+                # start the timer
+                start_time = time.perf_counter()
+
                 logger.info("Calling LLM", model=self.MODEL, attempt=attempt + 1)
 
                 response = self.client.messages.create(
@@ -66,9 +70,21 @@ class BaseAgent:
                         {"role": "user", "content": user_prompt}
                     ]
                 )
-
+                # stop the timer
+                duration = time.perf_counter() - start_time
                 # Track tokens
-                self.tokens_used += response.usage.input_tokens + response.usage.output_tokens
+                input_tokens = response.usage.input_tokens
+                output_tokens = response.usage.output_tokens
+                self.tokens_used += (input_tokens + output_tokens)
+
+                logger.info(
+                    "LLM Call Completed",
+                    agent=self.__class__.__name__,
+                    duration_seconds=round(duration, 3),
+                    input_tokens=input_tokens,
+                    output_tokens=output_tokens,
+                    total_tokens=self.tokens_used
+                )
 
                 raw_text = response.content[0].text
                 parsed_json = self._extract_json_from_text(raw_text)

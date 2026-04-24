@@ -82,7 +82,7 @@ def test_trigger_analysis_rate_limit(client, db, mocker, app):
     db.add(profile)
     db.commit()
 
-    mocker.patch('app.tasks.execute_pipeline_task.delay')
+    mocker.patch('app.tasks.execute_pipeline_task.delay', return_value=True)
 
     app.config["ASYNC_PIPELINE"] = True
 
